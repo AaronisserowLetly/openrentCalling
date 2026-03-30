@@ -48,6 +48,18 @@ else:
 NEXT_BATCH    = BASE_DIR / "next_batch.py"
 SCRAPE_SCRIPT = BASE_DIR / "scrape_references.py"
 
+# ── Seed initial data on first boot (Railway) ─────────────────────────────────
+if _data_override:
+    import shutil as _shutil
+    _seed = BASE_DIR / "_seed"
+    if _seed.exists():
+        for _src in _seed.rglob("*"):
+            if _src.is_file():
+                _dst = Path(_data_override) / _src.relative_to(_seed)
+                if not _dst.exists():
+                    _dst.parent.mkdir(parents=True, exist_ok=True)
+                    _shutil.copy2(_src, _dst)
+
 load_dotenv(ENV_FILE)
 
 # ── App ───────────────────────────────────────────────────────────────────────
