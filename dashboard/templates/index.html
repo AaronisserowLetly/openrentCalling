@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenRent Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #4f6ef7;
+    --accent-hover: #6b85ff;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --radius: 10px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; min-height: 100vh; }
+
+  /* Header */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 16px; height: 56px; position: sticky; top: 0; z-index: 100; }
+  .header-logo { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+  .header-meta { display: flex; gap: 12px; margin-left: auto; }
+  .stat-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .stat-badge strong { color: var(--text); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .dot.warn { background: var(--yellow); }
+  .dot.off { background: var(--muted); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 2px; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; }
+  .tab { padding: 14px 18px; cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 500; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-badge { background: var(--accent); color: #fff; border-radius: 10px; padding: 1px 7px; font-size: 11px; margin-left: 6px; }
+
+  /* Content */
+  .content { padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+  .card-row { display: flex; gap: 16px; align-items: flex-start; }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* Forms */
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+  input, select, textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 13px; font-family: var(--font); outline: none; transition: border-color 0.15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; white-space: nowrap; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { opacity: 0.85; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-red:hover { opacity: 0.85; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* Progress */
+  .progress-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.5s; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* Log */
+  .log-box { background: #0a0c14; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: 'SF Mono', 'Menlo', monospace; font-size: 12px; line-height: 1.6; height: 280px; overflow-y: auto; color: #a0aec0; }
+  .log-box .log-line { padding: 1px 0; }
+  .log-box .log-line.ok { color: var(--green); }
+  .log-box .log-line.err { color: var(--red); }
+  .log-box .log-line.done { color: var(--accent); font-weight: 600; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; border-radius: 6px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: var(--surface2); color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(79,110,247,0.04); }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-green  { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-red    { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .badge-blue   { background: rgba(79,110,247,0.15); color: var(--accent); }
+  .badge-muted  { background: var(--surface2); color: var(--muted); }
+
+  /* SMS body truncate */
+  .sms-body { max-width: 340px; white-space: pre-wrap; word-break: break-word; font-size: 12px; color: var(--muted); }
+  .sms-url  { color: var(--accent); font-size: 11px; }
+
+  /* Reply card */
+  .reply-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+  .reply-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+  .reply-thread { background: var(--bg); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .reply-thread .msg-bubble { padding: 7px 11px; border-radius: 8px; font-size: 12px; line-height: 1.5; max-width: 85%; word-break: break-word; }
+  .reply-thread .msg-bubble.you { background: var(--accent); color: #fff; align-self: flex-end; }
+  .reply-thread .msg-bubble.landlord { background: var(--surface2); color: var(--text); align-self: flex-start; }
+  .reply-thread .msg-label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+  .reply-thread .msg-wrap { display: flex; flex-direction: column; }
+  .reply-thread .msg-wrap.you { align-items: flex-end; }
+  .reply-thread .msg-wrap.landlord { align-items: flex-start; }
+  .reply-text { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5; resize: vertical; min-height: 80px; }
+  .reply-actions { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .flag-label { color: var(--red); font-weight: 600; font-size: 12px; }
+
+  /* Number selector */
+  .number-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .number-card { background: var(--surface2); border: 2px solid var(--border); border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.15s; }
+  .number-card:hover { border-color: var(--accent); }
+  .number-card.active { border-color: var(--accent); background: rgba(79,110,247,0.1); }
+  .number-card .num  { font-size: 15px; font-weight: 600; font-family: monospace; }
+  .number-card .name { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .number-card .check { float: right; color: var(--accent); font-size: 16px; }
+
+  /* Filters */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  .filter-row input[type="text"] { max-width: 220px; }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 48px 24px; color: var(--muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty p { font-size: 14px; }
+
+  /* Loading */
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; font-size: 13px; z-index: 9999; transform: translateY(80px); opacity: 0; transition: all 0.25s; pointer-events: none; max-width: 320px; }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-left: 3px solid var(--green); }
+  #toast.error   { border-left: 3px solid var(--red); }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* URL list input */
+  .url-input-area { width: 100%; font-size: 12px; font-family: monospace; }
+
+  /* Misc */
+  .flex { display: flex; }
+  .gap-8 { gap: 8px; }
+  .gap-12 { gap: 12px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 12px; }
+  .mono { font-family: monospace; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-logo">OpenRent</div>
+  <div class="header-meta">
+    <div class="stat-badge"><span class="dot" id="twilio-dot"></span><span id="header-called">—</span> called</div>
+    <div class="stat-badge"><strong id="header-remaining">—</strong> remaining</div>
+    <div class="stat-badge" id="header-number"><span class="muted">loading...</span></div>
+    <div class="stat-badge"><span class="dot" id="cookies-dot"></span><span id="cookies-status">no cookies</span></div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" data-tab="calling">Calling</div>
+  <div class="tab" data-tab="sms">SMS Inbox <span class="tab-badge" id="badge-sms" style="display:none"></span></div>
+  <div class="tab" data-tab="enquiries">Enquiries <span class="tab-badge" id="badge-enq" style="display:none"></span></div>
+  <div class="tab" data-tab="replies">Replies</div>
+</div>
+
+<!-- Content -->
+<div class="content">
+
+  <!-- ── CALLING ── -->
+  <div class="tab-panel active" id="panel-calling">
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <div class="card-title">Calling Number</div>
+          <div id="numbers-grid" class="number-grid">
+            <div class="muted small">Loading numbers...</div>
+          </div>
+          <div class="mt-12" id="number-save-row" style="display:none"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Run Batch</div>
+          <div style="display:flex; gap:12px; align-items:flex-end;">
+            <div style="flex:1">
+              <label>Batch size</label>
+              <input type="number" id="batch-size" value="20" min="1" max="100" style="max-width:100px">
+            </div>
+            <button class="btn btn-primary" id="run-btn" onclick="runBatch()">
+              Run Next Batch
+            </button>
+          </div>
+          <div class="mt-12">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span class="small muted">Overall Progress</span>
+              <span class="small muted" id="progress-text">—</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+            <div class="progress-label"><span id="progress-called">0 called</span><span id="progress-total">0 total</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Scrape New Listings</div>
+          <p class="muted small" style="margin-bottom:12px">Scrapes Rightmove for new property reference numbers, cross-checks against your not-contacted list and all previously called numbers, then adds any new ones to the top of the queue.</p>
+          <button class="btn btn-green" id="scrape-btn" onclick="runScrape()">
+            Scrape Rightmove Now
+          </button>
+          <div id="scrape-status" class="muted small mt-8" style="display:none"></div>
+          <div class="log-box" id="scrape-log" style="display:none; margin-top:12px; max-height:200px;"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="height:100%">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div class="card-title" style="margin:0">Live Log</div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost btn-sm" onclick="clearLog()">Clear</button>
+              <button class="btn btn-ghost btn-sm" onclick="loadCallLog()">Load History</button>
+            </div>
+          </div>
+          <div class="log-box" id="log-box"><div class="muted small">Run a batch to see live output here.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SMS INBOX ── -->
+  <div class="tab-panel" id="panel-sms">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div class="card-title" style="margin:0">SMS Inbox (all Twilio numbers)</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="loadSMS()">Refresh</button>
+          <button class="btn btn-primary btn-sm" onclick="submitAllVisible()">Submit All Pending</button>
+          <button class="btn btn-ghost btn-sm" onclick="showPasteSMS()">+ Paste SMS</button>
+        </div>
+      </div>
+      <div class="filter-row">
+        <input type="text" id="sms-search" placeholder="Search messages..." oninput="filterSMS()" style="max-width:220px">
+        <select id="sms-filter" onchange="filterSMS()" style="max-width:160px">
+          <option value="all">All messages</option>
+          <option value="addinfo">Has enquiry URL</option>
+          <option value="pending">Pending submission</option>
+          <option value="submitted">Submitted</option>
+          <option value="expired">Expired (18 Mar)</option>
+        </select>
+        <span class="muted small" id="sms-count"></span>
+      </div>
+      <div id="sms-content">
+        <div class="empty"><div class="empty-icon">📨</div><p>Click Refresh to load SMS messages</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ENQUIRIES ── -->
+  <div class="tab-panel" id="panel-enquiries">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div class="card-title" style="margin:0">Enquiry Forms</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="loadEnquiries()">Refresh</button>
+          <button class="btn btn-primary btn-sm" id="submit-all-btn" onclick="submitAllEnquiries()">Submit All Pending</button>
+        </div>
+      </div>
+      <div id="enq-stats" class="flex gap-12 mt-8 mb-12" style="margin-bottom:14px;">
+        <div class="stat-badge"><strong id="enq-pending">—</strong> pending</div>
+        <div class="stat-badge"><strong id="enq-submitted">—</strong> submitted</div>
+      </div>
+      <div id="enq-content">
+        <div class="empty"><div class="empty-icon">📋</div><p>Click Refresh to load enquiry URLs from SMS</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REPLIES ── -->
+  <div class="tab-panel" id="panel-replies">
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <div class="card-title">OpenRent Session Cookies</div>
+          <p class="muted small" style="margin-bottom:10px">Export your openrent.co.uk cookies using the <strong>Cookie-Editor</strong> browser extension (Export → JSON), then paste here.</p>
+          <textarea id="cookies-input" placeholder='[{"name":"session","value":"..."}]' style="min-height:80px; font-family:monospace; font-size:11px;"></textarea>
+          <div class="mt-8">
+            <button class="btn btn-primary btn-sm" onclick="saveCookies()">Save Cookies</button>
+            <span class="muted small" id="cookies-save-status" style="margin-left:10px"></span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Find Enquiry by Landlord Name</div>
+          <p class="muted small" style="margin-bottom:10px">Paste your OpenRent enquiries page URL, then type the landlord name to find.</p>
+          <div style="margin-bottom:8px">
+            <label>Enquiries URL</label>
+            <input type="text" id="search-enq-url" placeholder="https://www.openrent.co.uk/myenquiries">
+          </div>
+          <div style="margin-bottom:8px">
+            <label>Landlord name</label>
+            <input type="text" id="search-landlord-name" placeholder="e.g. Matthew" onkeydown="if(event.key==='Enter')searchLandlord()">
+          </div>
+          <button class="btn btn-primary" id="search-btn" onclick="searchLandlord()">Search</button>
+          <div id="search-results" style="margin-top:12px"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Process Message Threads</div>
+          <p class="muted small" style="margin-bottom:10px">Paste one OpenRent message thread URL per line — or load all unread threads automatically.</p>
+          <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center;">
+            <input type="text" id="unread-enq-url" placeholder="https://www.openrent.co.uk/myenquiries" style="flex:1">
+            <button class="btn btn-green btn-sm" id="load-unread-btn" onclick="loadUnreadThreads()">Load Unread</button>
+          </div>
+          <textarea id="reply-urls" class="url-input-area" placeholder="https://www.openrent.co.uk/messages/123&#10;https://www.openrent.co.uk/messages/456" style="min-height:100px"></textarea>
+          <div class="mt-8 flex gap-8">
+            <button class="btn btn-primary" onclick="processReplyURLs()">Generate Replies</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('reply-results').innerHTML='';replyQueue=[];document.getElementById('reply-urls').value='';">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div id="reply-results">
+          <div class="empty"><div class="empty-icon">💬</div><p>Paste message URLs and click Generate Replies</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let selectedNumber = null;
+let smsData = [];
+let enquiryData = [];
+let replyQueue = [];
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadConfig();
+  loadNumbers();
+
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+      if (t.dataset.tab === 'sms') loadSMS();
+      if (t.dataset.tab === 'enquiries') loadEnquiries();
+    });
+  });
+});
+
+// ── Config ────────────────────────────────────────────────────────────────────
+async function loadConfig() {
+  const d = await api('/api/config');
+  if (d.error) return;
+
+  // Header stats
+  document.getElementById('header-called').textContent = d.progress.called;
+  document.getElementById('header-remaining').textContent = d.progress.remaining;
+  document.getElementById('header-number').innerHTML = d.from_number
+    ? `<span class="mono" style="font-size:12px">${d.from_number}</span>`
+    : '<span class="muted">no number set</span>';
+
+  // Cookies
+  const cookiesDot = document.getElementById('cookies-dot');
+  const cookiesStatus = document.getElementById('cookies-status');
+  cookiesDot.className = 'dot ' + (d.has_cookies ? '' : 'off');
+  cookiesStatus.textContent = d.has_cookies ? 'cookies set' : 'no cookies';
+
+  // Progress bar
+  const pct = d.progress.total ? Math.round(d.progress.called / d.progress.total * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = pct + '%';
+  document.getElementById('progress-called').textContent = d.progress.called + ' called';
+  document.getElementById('progress-total').textContent = d.progress.total + ' total';
+
+  selectedNumber = d.from_number;
+}
+
+// ── Numbers ───────────────────────────────────────────────────────────────────
+async function loadNumbers() {
+  const numbers = await api('/api/twilio/numbers');
+  const grid = document.getElementById('numbers-grid');
+
+  if (numbers.error) {
+    grid.innerHTML = `<div class="muted small">${numbers.error}</div>`;
+    return;
+  }
+  if (!numbers.length) {
+    grid.innerHTML = '<div class="muted small">No numbers found in Twilio account.</div>';
+    return;
+  }
+
+  document.getElementById('twilio-dot').className = 'dot';
+  grid.innerHTML = numbers.map(n => `
+    <div class="number-card ${n.active ? 'active' : ''}" onclick="selectNumber('${n.phone_number}', this)">
+      ${n.active ? '<span class="check">✓</span>' : ''}
+      <div class="num">${n.phone_number}</div>
+      <div class="name">${n.friendly_name}</div>
+    </div>
+  `).join('');
+}
+
+async function selectNumber(number, el) {
+  document.querySelectorAll('.number-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedNumber = number;
+  const r = await api('/api/config/number', 'POST', { number: selectedNumber });
+  if (r.ok) {
+    toast('Calling number set to ' + number, 'success');
+    loadConfig();
+  } else {
+    toast('Failed to set number: ' + (r.error || 'unknown'), 'error');
+  }
+}
+
+// ── Calling ───────────────────────────────────────────────────────────────────
+function runBatch() {
+  const btn = document.getElementById('run-btn');
+  const batchSize = parseInt(document.getElementById('batch-size').value) || 20;
+  const logBox = document.getElementById('log-box');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Running...';
+  logBox.innerHTML = '';
+
+  const addLine = (text, cls = '') => {
+    const line = document.createElement('div');
+    line.className = 'log-line ' + cls;
+    line.textContent = text;
+    logBox.appendChild(line);
+    logBox.scrollTop = logBox.scrollHeight;
+  };
+
+  addLine('Starting batch of ' + batchSize + '...');
+
+  const es = new EventSource('/api/calls/run?' + new URLSearchParams({ batch_size: batchSize }));
+  // SSE for POST won't work — use fetch with ReadableStream instead
+  es.close();
+
+  fetch('/api/calls/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ batch_size: batchSize }),
+  }).then(response => {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    function read() {
+      reader.read().then(({ done, value }) => {
+        if (done) {
+          btn.disabled = false;
+          btn.textContent = 'Run Next Batch';
+          loadConfig();
+          return;
+        }
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.line !== undefined) {
+              const lower = data.line.toLowerCase();
+              const cls = lower.includes('error') || lower.includes('fail') ? 'err'
+                        : lower.includes('done') || lower.includes('ok') || lower.includes('complet') ? 'ok'
+                        : '';
+              addLine(data.line, cls);
+            }
+            if (data.done) {
+              const cls = data.returncode === 0 ? 'done' : 'err';
+              addLine(data.returncode === 0 ? '✓ Batch complete' : '✗ Batch ended with errors', cls);
+              btn.disabled = false;
+              btn.textContent = 'Run Next Batch';
+              loadConfig();
+            }
+          } catch {}
+        }
+        read();
+      });
+    }
+    read();
+  }).catch(err => {
+    addLine('Error: ' + err.message, 'err');
+    btn.disabled = false;
+    btn.textContent = 'Run Next Batch';
+  });
+}
+
+function runScrape() {
+  const btn      = document.getElementById('scrape-btn');
+  const logBox   = document.getElementById('scrape-log');
+  const statusEl = document.getElementById('scrape-status');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Scraping...';
+  logBox.style.display = 'block';
+  logBox.innerHTML = '';
+  statusEl.style.display = 'none';
+
+  const addLine = (text, cls = '') => {
+    const line = document.createElement('div');
+    line.className = 'log-line ' + cls;
+    line.textContent = text;
+    logBox.appendChild(line);
+    logBox.scrollTop = logBox.scrollHeight;
+  };
+
+  addLine('Starting Rightmove scrape...');
+
+  fetch('/api/scrape/run', { method: 'POST' })
+    .then(response => {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      function read() {
+        reader.read().then(({ done, value }) => {
+          if (done) {
+            btn.disabled = false;
+            btn.textContent = 'Scrape Rightmove Now';
+            loadConfig();
+            return;
+          }
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.line !== undefined) {
+                const lower = data.line.toLowerCase();
+                const cls = lower.includes('error') ? 'err'
+                          : lower.includes('done') || lower.includes('new ref') || lower.includes('written') ? 'ok'
+                          : lower.includes('nothing new') ? 'ok'
+                          : '';
+                addLine(data.line, cls);
+              }
+              if (data.done) {
+                const success = data.returncode === 0;
+                addLine(success ? '✓ Scrape complete' : '✗ Scrape ended with errors', success ? 'ok' : 'err');
+                statusEl.textContent = success ? 'Scrape finished — check log for new references added.' : 'Scrape failed — see log above.';
+                statusEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Scrape Rightmove Now';
+                loadConfig();
+              }
+            } catch {}
+          }
+          read();
+        });
+      }
+      read();
+    })
+    .catch(err => {
+      addLine('Error: ' + err.message, 'err');
+      btn.disabled = false;
+      btn.textContent = 'Scrape Rightmove Now';
+    });
+}
+
+function clearLog() {
+  document.getElementById('log-box').innerHTML = '<div class="muted small">Log cleared.</div>';
+}
+
+async function loadCallLog() {
+  const logBox = document.getElementById('log-box');
+  logBox.innerHTML = '<div class="muted small">Loading...</div>';
+  const d = await api('/api/calls/log');
+  if (d.error) { logBox.innerHTML = `<div class="err">${d.error}</div>`; return; }
+  logBox.innerHTML = d.lines.map(l => `<div class="log-line">${escHtml(l)}</div>`).join('');
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+// ── SMS dismiss (persisted in localStorage) ───────────────────────────────────
+function getDismissed() {
+  try { return new Set(JSON.parse(localStorage.getItem('dismissed_sms') || '[]')); }
+  catch { return new Set(); }
+}
+function saveDismissed(set) {
+  localStorage.setItem('dismissed_sms', JSON.stringify([...set]));
+}
+function dismissSMS(sid) {
+  const dismissed = getDismissed();
+  dismissed.add(sid);
+  saveDismissed(dismissed);
+  const row = document.getElementById('sms-row-' + sid);
+  if (row) row.remove();
+  const msg = smsData.find(m => m.sid === sid);
+  if (msg) msg.skip = true;
+  // update row count
+  const visible = document.querySelectorAll('#sms-content tbody tr').length;
+  document.getElementById('sms-count').textContent = visible + ' messages';
+  // update badge
+  const pending = smsData.filter(m => !getDismissed().has(m.sid) && m.has_addinfo && !m.enquiry_submitted && !m.skip && !m.expired).length;
+  const badge = document.getElementById('badge-sms');
+  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline'; }
+  else badge.style.display = 'none';
+}
+
+// ── SMS ───────────────────────────────────────────────────────────────────────
+async function loadSMS() {
+  document.getElementById('sms-content').innerHTML = '<div class="muted small" style="padding:20px">Loading SMS messages...</div>';
+  const data = await api('/api/sms');
+  if (data.error) {
+    document.getElementById('sms-content').innerHTML = `<div class="empty"><p style="color:var(--red)">${data.error}</p></div>`;
+    return;
+  }
+  smsData = data;
+
+  // Auto-dismiss expired SMS
+  const autoDismissed = getDismissed();
+  let autoDismissUpdated = false;
+  data.forEach(m => {
+    if (m.expired && !autoDismissed.has(m.sid)) {
+      autoDismissed.add(m.sid);
+      autoDismissUpdated = true;
+    }
+  });
+  if (autoDismissUpdated) saveDismissed(autoDismissed);
+
+  // Update badge
+  const _dismissed = getDismissed();
+  const pending = data.filter(m => !_dismissed.has(m.sid) && m.has_addinfo && !m.enquiry_submitted && !m.skip && !m.expired).length;
+  const badge = document.getElementById('badge-sms');
+  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline'; }
+  else badge.style.display = 'none';
+
+  renderSMS();
+}
+
+function filterSMS() { renderSMS(); }
+
+function renderSMS() {
+  const search = document.getElementById('sms-search').value.toLowerCase();
+  const filter = document.getElementById('sms-filter').value;
+  const dismissed = getDismissed();
+  let rows = smsData.filter(m => !dismissed.has(m.sid));
+
+  if (filter === 'addinfo')   rows = rows.filter(m => m.has_addinfo);
+  if (filter === 'pending')   rows = rows.filter(m => m.has_addinfo && !m.enquiry_submitted && !m.skip && !m.expired);
+  if (filter === 'submitted') rows = rows.filter(m => m.enquiry_submitted);
+  if (filter === 'expired')   rows = rows.filter(m => m.expired);
+  if (search) rows = rows.filter(m => (m.body||'').toLowerCase().includes(search) || (m.from||'').includes(search));
+
+  document.getElementById('sms-count').textContent = rows.length + ' messages';
+
+  if (!rows.length) {
+    document.getElementById('sms-content').innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>No messages match this filter.</p></div>';
+    return;
+  }
+
+  document.getElementById('sms-content').innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Date</th><th>From</th><th>To</th><th>Message</th><th>Status</th><th>Action</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map((m, i) => {
+            const date = m.date ? m.date.slice(0,16).replace('T',' ') : '—';
+            const urls = m.enquiry_urls || [];
+            const urlHtml = urls.map(u => `<div class="sms-url">→ ${u}</div>`).join('');
+            const status = m.skip ? `<span class="badge badge-muted">skip</span>`
+              : m.expired ? `<span class="badge badge-muted">expired</span>`
+              : m.enquiry_submitted ? `<span class="badge badge-green">submitted</span>`
+              : m.has_addinfo ? `<span class="badge badge-yellow">pending</span>`
+              : `<span class="badge badge-muted">no URL</span>`;
+            const actions = urls.length && !m.skip && !m.enquiry_submitted && !m.expired
+              ? urls.map(u => `<button class="btn btn-green btn-sm" onclick="submitSingleEnquiry('${u}', this)">Submit</button>`).join(' ')
+              : '';
+            return `<tr id="sms-row-${m.sid}">
+              <td class="mono small">${date}</td>
+              <td class="mono small">${m.from||'—'}</td>
+              <td class="mono small">${m.to||'—'}</td>
+              <td><div class="sms-body">${escHtml((m.body||'').slice(0,200))}</div>${urlHtml}</td>
+              <td>${status}</td>
+              <td style="display:flex;gap:6px;align-items:center;">${actions}<button class="btn btn-ghost btn-sm" style="padding:3px 7px;color:var(--muted);font-size:15px;line-height:1;" title="Dismiss" onclick="dismissSMS('${m.sid}')">×</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function submitSingleEnquiry(url, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  const r = await api('/api/enquiries/submit', 'POST', { url });
+  if (r.success) {
+    btn.closest('tr').querySelector('td:nth-child(5)').innerHTML = '<span class="badge badge-green">submitted</span>';
+    btn.closest('td').innerHTML = '<span class="badge badge-muted">done</span>';
+    toast('Enquiry submitted', 'success');
+    // Update data
+    const msg = smsData.find(m => (m.enquiry_urls||[]).includes(url));
+    if (msg) msg.enquiry_submitted = true;
+  } else {
+    btn.disabled = false;
+    btn.textContent = 'Retry';
+    toast('Failed: ' + (r.error || 'unknown error'), 'error');
+  }
+}
+
+async function submitAllVisible() {
+  const filter = document.getElementById('sms-filter').value;
+  const pending = smsData.filter(m => m.has_addinfo && !m.enquiry_submitted && !m.skip && !m.expired);
+  const urls = [...new Set(pending.flatMap(m => m.enquiry_urls || []))];
+  if (!urls.length) { toast('No pending enquiries to submit', 'error'); return; }
+  toast(`Submitting ${urls.length} enquiries...`);
+  const r = await api('/api/enquiries/submit-all', 'POST', { urls });
+  toast(`${r.submitted}/${r.total} submitted successfully`, r.submitted === r.total ? 'success' : 'error');
+  loadSMS();
+}
+
+// ── Enquiry dismiss ───────────────────────────────────────────────────────────
+function getdismissedEnq() {
+  try { return new Set(JSON.parse(localStorage.getItem('dismissed_enq') || '[]')); }
+  catch { return new Set(); }
+}
+function dismissEnq(url, btn) {
+  const dismissed = getdismissedEnq();
+  dismissed.add(url);
+  localStorage.setItem('dismissed_enq', JSON.stringify([...dismissed]));
+  const row = btn.closest('tr');
+  const key = btoa(url).replace(/[^a-z0-9]/gi, '');
+  const statusEl = document.getElementById('enq-status-' + key);
+  if (statusEl) statusEl.innerHTML = '<span class="badge badge-muted">skip</span>';
+  row.style.opacity = '0.4';
+  row.style.pointerEvents = 'none';
+  const pendingEl = document.getElementById('enq-pending');
+  const item = enquiryData.find(i => i.url === url);
+  if (item && item.status === 'pending') {
+    item.status = 'skip';
+    pendingEl.textContent = Math.max(0, parseInt(pendingEl.textContent) - 1);
+  }
+}
+
+// ── Enquiries ─────────────────────────────────────────────────────────────────
+async function loadEnquiries() {
+  document.getElementById('enq-content').innerHTML = '<div class="muted small" style="padding:20px">Loading...</div>';
+  const d = await api('/api/enquiries');
+  if (d.error) {
+    document.getElementById('enq-content').innerHTML = `<div class="empty"><p style="color:var(--red)">${d.error}</p></div>`;
+    return;
+  }
+  enquiryData = d.items;
+  document.getElementById('enq-pending').textContent = d.pending;
+  document.getElementById('enq-submitted').textContent = d.submitted;
+
+  const badge = document.getElementById('badge-enq');
+  if (d.pending > 0) { badge.textContent = d.pending; badge.style.display = 'inline'; }
+  else badge.style.display = 'none';
+
+  if (!d.items.length) {
+    document.getElementById('enq-content').innerHTML = '<div class="empty"><div class="empty-icon">✅</div><p>No enquiry URLs found.</p></div>';
+    return;
+  }
+
+  document.getElementById('enq-content').innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>URL</th><th>From Number</th><th>Status</th><th>Action</th><th></th></tr></thead>
+        <tbody>
+          ${d.items.filter(item => !getdismissedEnq().has(item.url)).map(item => `
+            <tr id="enq-row-${btoa(item.url).replace(/[^a-z0-9]/gi,'')}">
+              <td class="mono small">${(item.sms_date||'').slice(0,10)}</td>
+              <td class="mono small" style="max-width:300px; word-break:break-all; font-size:11px;">${escHtml(item.url)}</td>
+              <td class="mono small">${item.sms_from||'—'}</td>
+              <td id="enq-status-${btoa(item.url).replace(/[^a-z0-9]/gi,'')}">${item.status === 'submitted'
+                ? `<span class="badge badge-green">submitted</span>`
+                : item.status === 'expired'
+                ? `<span class="badge badge-muted">expired</span>`
+                : `<span class="badge badge-yellow">pending</span>`}
+              </td>
+              <td>${item.status === 'pending'
+                ? `<button class="btn btn-green btn-sm" onclick="submitEnqRow('${escAttr(item.url)}', this)">Submit</button>`
+                : item.status === 'submitted'
+                ? `<span class="muted small">${(item.submitted_at||'').slice(0,16)}</span>`
+                : ''}
+              </td>
+              <td><button class="btn btn-ghost btn-sm" style="padding:3px 7px;color:var(--muted);font-size:15px;line-height:1;" title="Skip" onclick="dismissEnq('${escAttr(item.url)}', this)">×</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function submitEnqRow(url, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  const r = await api('/api/enquiries/submit', 'POST', { url });
+  if (r.success) {
+    const row = btn.closest('tr');
+    row.querySelector('td:nth-child(4)').innerHTML = '<span class="badge badge-green">submitted</span>';
+    row.querySelector('td:nth-child(5)').innerHTML = '<span class="muted small">just now</span>';
+    toast('Enquiry submitted', 'success');
+    const d = document.getElementById('enq-pending');
+    d.textContent = Math.max(0, parseInt(d.textContent) - 1);
+    const s = document.getElementById('enq-submitted');
+    s.textContent = parseInt(s.textContent) + 1;
+  } else {
+    btn.disabled = false;
+    btn.textContent = 'Retry';
+    toast('Failed: ' + (r.error || 'unknown'), 'error');
+  }
+}
+
+async function submitAllEnquiries() {
+  const urls = enquiryData.filter(i => i.status === 'pending').map(i => i.url);
+  if (!urls.length) { toast('No pending enquiries', 'error'); return; }
+  const btn = document.getElementById('submit-all-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Submitting...';
+  toast(`Submitting ${urls.length} enquiries...`);
+  const r = await api('/api/enquiries/submit-all', 'POST', { urls });
+  btn.disabled = false;
+  btn.textContent = 'Submit All Pending';
+  toast(`${r.submitted}/${r.total} submitted`, r.submitted === r.total ? 'success' : 'error');
+  loadEnquiries();
+}
+
+// ── Load unread threads ───────────────────────────────────────────────────────
+async function loadUnreadThreads() {
+  const url = document.getElementById('unread-enq-url').value.trim() || 'https://www.openrent.co.uk/myenquiries';
+  const btn = document.getElementById('load-unread-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading...';
+
+  const r = await api('/api/replies/unread-threads', 'POST', { url });
+  btn.disabled = false;
+  btn.textContent = 'Load Unread';
+
+  if (r.error) { toast('Error: ' + r.error, 'error'); return; }
+  if (!r.urls || !r.urls.length) { toast('No unread threads found', 'error'); return; }
+
+  document.getElementById('reply-urls').value = r.urls.join('\n');
+  toast(`${r.urls.length} unread thread(s) loaded — click Generate Replies`, 'success');
+}
+
+// ── Landlord search ───────────────────────────────────────────────────────────
+async function searchLandlord() {
+  const url    = document.getElementById('search-enq-url').value.trim();
+  const name   = document.getElementById('search-landlord-name').value.trim();
+  const btn    = document.getElementById('search-btn');
+  const out    = document.getElementById('search-results');
+
+  if (!url || !name) { toast('Paste the URL and enter a name first', 'error'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Searching...';
+  out.innerHTML = '<div class="muted small">Scanning enquiries...</div>';
+
+  const r = await api('/api/replies/search-landlord', 'POST', { url, name });
+
+  btn.disabled = false;
+  btn.textContent = 'Search';
+
+  if (r.error) { out.innerHTML = `<div style="color:var(--red);font-size:12px">${escHtml(r.error)}</div>`; return; }
+
+  if (!r.results || !r.results.length) {
+    out.innerHTML = `<div class="muted small">No enquiries found matching "<strong>${escHtml(name)}</strong>".</div>`;
+    return;
+  }
+
+  out.innerHTML = r.results.map(item => `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:8px;">
+      <div style="font-weight:600;font-size:13px;margin-bottom:4px;">${escHtml(item.landlord)}</div>
+      <div class="muted small" style="margin-bottom:6px;">${escHtml(item.property || '')}</div>
+      <a href="${escHtml(item.url)}" target="_blank" style="color:var(--accent);font-size:12px;word-break:break-all;">${escHtml(item.url)}</a>
+      <div style="margin-top:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('${escAttr(item.url)}');toast('Copied!','success')">Copy URL</button>
+        <button class="btn btn-ghost btn-sm" style="margin-left:4px" onclick="document.getElementById('reply-urls').value+=('${escAttr(item.url)}\\n');toast('Added to thread list','success')">Add to Replies</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Cookies ───────────────────────────────────────────────────────────────────
+async function saveCookies() {
+  const val = document.getElementById('cookies-input').value.trim();
+  if (!val) { toast('Paste your cookies first', 'error'); return; }
+  const status = document.getElementById('cookies-save-status');
+  status.textContent = 'Saving...';
+  try {
+    const parsed = JSON.parse(val);
+    const r = await api('/api/cookies', 'POST', { cookies: parsed });
+    if (r.ok) {
+      status.textContent = `Saved ${r.count} cookies`;
+      status.style.color = 'var(--green)';
+      document.getElementById('cookies-input').value = '';
+      loadConfig();
+      toast('Cookies saved', 'success');
+    } else {
+      status.textContent = r.error || 'Error';
+      status.style.color = 'var(--red)';
+    }
+  } catch (e) {
+    status.textContent = 'Invalid JSON: ' + e.message;
+    status.style.color = 'var(--red)';
+  }
+}
+
+// ── Replies ───────────────────────────────────────────────────────────────────
+async function processReplyURLs() {
+  const raw = document.getElementById('reply-urls').value.trim();
+  if (!raw) { toast('Paste some URLs first', 'error'); return; }
+  const urls = raw.split('\n').map(u => u.trim()).filter(u => u.startsWith('http'));
+  if (!urls.length) { toast('No valid URLs found', 'error'); return; }
+
+  const results = document.getElementById('reply-results');
+  results.innerHTML = '';
+
+  for (const url of urls) {
+    const card = document.createElement('div');
+    card.className = 'reply-card';
+    card.innerHTML = `
+      <div class="reply-title muted small mono">${escHtml(url)}</div>
+      <div style="color:var(--muted);font-size:12px;margin-top:8px"><span class="spinner"></span> Generating reply...</div>
+    `;
+    results.appendChild(card);
+
+    const r = await api('/api/replies/generate', 'POST', { url });
+
+    if (r.error) {
+      card.innerHTML = `
+        <div class="reply-title muted small mono">${escHtml(url)}</div>
+        <div style="color:var(--red);font-size:12px;margin-top:8px">Error: ${escHtml(r.error)}</div>
+      `;
+      continue;
+    }
+
+    if (r.flagged) {
+      card.innerHTML = `
+        <div class="reply-title">${escHtml(r.title || url)}</div>
+        <div class="flag-label">🚩 ${escHtml(r.reply)}</div>
+      `;
+      continue;
+    }
+
+    card.innerHTML = `
+      <div class="reply-title">${escHtml(r.title || url)}</div>
+      <div class="reply-thread">${formatThread(r.thread||'')}</div>
+      <textarea class="reply-text" id="reply-text-${replyQueue.length}">${escHtml(r.reply)}</textarea>
+      <div class="reply-actions">
+        <button class="btn btn-green" onclick="sendReply('${escAttr(url)}', this)">Send Reply</button>
+        <button class="btn btn-ghost btn-sm" onclick="this.closest('.reply-card').remove()">Discard</button>
+        <span class="sent-status"></span>
+      </div>
+    `;
+  }
+}
+
+async function sendReply(url, btn) {
+  const card = btn.closest('.reply-card');
+  const message = card.querySelector('.reply-text').value.trim();
+  if (!message) { toast('Reply is empty', 'error'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Sending...';
+  const status = card.querySelector('.sent-status');
+  status.textContent = '';
+
+  const r = await api('/api/replies/send', 'POST', { url, message });
+  if (r.success) {
+    card.style.opacity = '0.5';
+    status.textContent = '✓ Sent';
+    status.style.color = 'var(--green)';
+    btn.textContent = 'Sent';
+    toast('Reply sent', 'success');
+  } else {
+    btn.disabled = false;
+    btn.textContent = 'Send Reply';
+    status.textContent = 'Error: ' + (r.error || 'unknown');
+    status.style.color = 'var(--red)';
+    toast('Send failed: ' + (r.error || ''), 'error');
+  }
+}
+
+function formatThread(thread) {
+  if (!thread) return '';
+  const lines = thread.split('\n\n').filter(l => l.trim());
+  return lines.map(line => {
+    const youMatch    = line.match(/^You:\s*([\s\S]+)/i);
+    const landlordMatch = line.match(/^Landlord:\s*([\s\S]+)/i) || line.match(/^([^:]{1,30}):\s*([\s\S]+)/i);
+    if (youMatch) {
+      return `<div class="msg-wrap you"><span class="msg-label">You</span><div class="msg-bubble you">${escHtml(youMatch[1].trim())}</div></div>`;
+    } else if (landlordMatch) {
+      const sender = landlordMatch[2] ? landlordMatch[1] : 'Landlord';
+      const text   = landlordMatch[2] || landlordMatch[1];
+      return `<div class="msg-wrap landlord"><span class="msg-label">${escHtml(sender)}</span><div class="msg-bubble landlord">${escHtml(text.trim())}</div></div>`;
+    }
+    return `<div class="msg-wrap landlord"><div class="msg-bubble landlord">${escHtml(line.trim())}</div></div>`;
+  }).join('');
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+async function api(path, method = 'GET', body = null) {
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(path, opts);
+    return await r.json();
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(str) {
+  return String(str||'').replace(/'/g,"\\'");
+}
+
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 3500);
+}
+
+function showPasteSMS() {
+  const body = prompt('Paste the SMS body you received on +447348194759:');
+  if (!body || !body.trim()) return;
+  api('/api/sms/manual', 'POST', { body: body.trim(), from: '+447348194759', to: '+447348194759' })
+    .then(r => {
+      if (r.ok) { toast('SMS added — refreshing...', 'success'); loadSMS(); loadEnquiries(); }
+      else toast('Error: ' + (r.error || 'unknown'), 'error');
+    });
+}
+</script>
+</body>
+</html>

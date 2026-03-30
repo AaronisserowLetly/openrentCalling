@@ -1,0 +1,21 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+
+# Runtime data (managed on Railway volume, not in git)
+call_log.txt
+incoming_log.txt
+references.csv
+called_references.csv
+dashboard/data/submitted_enquiries.json
+dashboard/openrent_cookies.json
+
+# Reference source list (large, managed separately)
+Referances/

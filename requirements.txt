@@ -1,0 +1,6 @@
+twilio
+python-dotenv
+flask
+playwright
+anthropic
+gunicorn
