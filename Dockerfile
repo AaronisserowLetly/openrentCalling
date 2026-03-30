@@ -16,4 +16,4 @@ RUN playwright install chromium
 
 COPY . .
 
-CMD gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 600 dashboard.app:app
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 1 --threads 8 --timeout 600 dashboard.app:app"]
