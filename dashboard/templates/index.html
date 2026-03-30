@@ -134,6 +134,21 @@
   .filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
   .filter-row input[type="text"] { max-width: 220px; }
 
+  /* Sub-tabs (inside a panel) */
+  .sub-tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--surface2); border-radius: 8px; padding: 4px; width: fit-content; }
+  .sub-tab { padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); transition: all 0.15s; white-space: nowrap; }
+  .sub-tab:hover { color: var(--text); }
+  .sub-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+  .sub-tab-badge { background: var(--accent); color: #fff; border-radius: 10px; padding: 1px 6px; font-size: 10px; margin-left: 5px; }
+
+  /* How-to steps */
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .step { display: flex; gap: 14px; align-items: flex-start; }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-body { padding-top: 3px; }
+  .step-body strong { display: block; font-size: 14px; margin-bottom: 2px; }
+  .step-body span { font-size: 12px; color: var(--muted); }
+
   /* Empty state */
   .empty { text-align: center; padding: 48px 24px; color: var(--muted); }
   .empty-icon { font-size: 40px; margin-bottom: 12px; }
@@ -182,17 +197,93 @@
 
 <!-- Tabs -->
 <div class="tabs">
-  <div class="tab active" data-tab="calling">Calling</div>
-  <div class="tab" data-tab="sms">SMS Inbox <span class="tab-badge" id="badge-sms" style="display:none"></span></div>
-  <div class="tab" data-tab="enquiries">Enquiries <span class="tab-badge" id="badge-enq" style="display:none"></span></div>
+  <div class="tab active" data-tab="home">Home</div>
+  <div class="tab" data-tab="calling">Calling</div>
+  <div class="tab" data-tab="sms">SMS &amp; Enquiries <span class="tab-badge" id="badge-sms" style="display:none"></span></div>
   <div class="tab" data-tab="replies">Replies</div>
 </div>
 
 <!-- Content -->
 <div class="content">
 
+  <!-- ── HOME ── -->
+  <div class="tab-panel active" id="panel-home">
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <div class="card-title">How to Use</div>
+          <div class="steps">
+            <div class="step">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <strong>Set up your cookies</strong>
+                <span>Export cookies from openrent.co.uk using the Cookie-Editor browser extension and paste them in the box on the right. This lets the dashboard submit enquiry forms on your behalf.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <strong>Go to Calling &rarr; select a number</strong>
+                <span>Pick which Twilio number to call from. This should match the number associated with the account you want enquiries sent from.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <strong>Optionally scrape new listings</strong>
+                <span>Use "Scrape Rightmove Now" to pull the latest property references into the queue. Only new ones (not already called) will be added.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">4</div>
+              <div class="step-body">
+                <strong>Run a batch of calls</strong>
+                <span>Set a batch size and hit "Run Next Batch". The system calls Rightmove's automated line and enters each reference number via the keypad. Watch the live log for progress.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">5</div>
+              <div class="step-body">
+                <strong>Check SMS &amp; Enquiries</strong>
+                <span>Successful calls trigger an SMS back from Rightmove containing a link to submit an enquiry on OpenRent. Go to the SMS &amp; Enquiries tab and click "Submit All Pending" to send them.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">6</div>
+              <div class="step-body">
+                <strong>Reply to landlords</strong>
+                <span>Once an enquiry is submitted, landlords may message back on OpenRent. Go to the Replies tab, paste your thread URL (or load unread threads), and the AI will draft a reply to get their phone number.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">OpenRent Session Cookies</div>
+          <p class="muted small" style="margin-bottom:12px">Export your openrent.co.uk cookies using the <strong>Cookie-Editor</strong> browser extension (Export &rarr; JSON), then paste here. Cookies are needed to submit enquiry forms.</p>
+          <div id="cookies-current" style="margin-bottom:10px"></div>
+          <textarea id="cookies-input" placeholder='[{"name":"session","value":"..."}]' style="min-height:100px; font-family:monospace; font-size:11px;"></textarea>
+          <div class="mt-8 flex gap-8" style="align-items:center;">
+            <button class="btn btn-primary" onclick="saveCookies()">Save Cookies</button>
+            <span class="muted small" id="cookies-save-status" style="margin-left:4px"></span>
+          </div>
+          <div class="divider"></div>
+          <p class="muted small">Steps to export cookies:</p>
+          <ol style="margin-top:8px;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.8;">
+            <li>Install <strong style="color:var(--text)">Cookie-Editor</strong> from the Chrome/Firefox extension store</li>
+            <li>Log in to <strong style="color:var(--text)">openrent.co.uk</strong> in your browser</li>
+            <li>Click the Cookie-Editor icon &rarr; click <strong style="color:var(--text)">Export</strong> &rarr; <strong style="color:var(--text)">Export as JSON</strong></li>
+            <li>Paste the copied JSON into the box above and click Save</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── CALLING ── -->
-  <div class="tab-panel active" id="panel-calling">
+  <div class="tab-panel" id="panel-calling">
     <div class="grid-2">
       <div>
         <div class="card">
@@ -250,50 +341,57 @@
     </div>
   </div>
 
-  <!-- ── SMS INBOX ── -->
+  <!-- ── SMS & ENQUIRIES ── -->
   <div class="tab-panel" id="panel-sms">
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <div class="card-title" style="margin:0">SMS Inbox (all Twilio numbers)</div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-ghost btn-sm" onclick="loadSMS()">Refresh</button>
-          <button class="btn btn-primary btn-sm" onclick="submitAllVisible()">Submit All Pending</button>
-          <button class="btn btn-ghost btn-sm" onclick="showPasteSMS()">+ Paste SMS</button>
+    <!-- Sub-tab toggle -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="sub-tabs">
+        <div class="sub-tab active" id="sub-sms-btn" onclick="switchSubTab('sms-inbox')">
+          SMS Messages <span class="sub-tab-badge" id="badge-sms-inner" style="display:none"></span>
+        </div>
+        <div class="sub-tab" id="sub-enq-btn" onclick="switchSubTab('enquiry-urls')">
+          Enquiry URLs <span class="sub-tab-badge" id="badge-enq" style="display:none"></span>
         </div>
       </div>
-      <div class="filter-row">
-        <input type="text" id="sms-search" placeholder="Search messages..." oninput="filterSMS()" style="max-width:220px">
-        <select id="sms-filter" onchange="filterSMS()" style="max-width:160px">
-          <option value="all">All messages</option>
-          <option value="addinfo">Has enquiry URL</option>
-          <option value="pending">Pending submission</option>
-          <option value="submitted">Submitted</option>
-          <option value="expired">Expired (18 Mar)</option>
-        </select>
-        <span class="muted small" id="sms-count"></span>
-      </div>
-      <div id="sms-content">
-        <div class="empty"><div class="empty-icon">📨</div><p>Click Refresh to load SMS messages</p></div>
+      <div style="display:flex;gap:8px;" id="sms-actions">
+        <button class="btn btn-ghost btn-sm" onclick="loadSMS()">Refresh</button>
+        <button class="btn btn-primary btn-sm" onclick="submitAllVisible()">Submit All Pending</button>
+        <button class="btn btn-ghost btn-sm" onclick="showPasteSMS()">+ Paste SMS</button>
       </div>
     </div>
-  </div>
 
-  <!-- ── ENQUIRIES ── -->
-  <div class="tab-panel" id="panel-enquiries">
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <div class="card-title" style="margin:0">Enquiry Forms</div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-ghost btn-sm" onclick="loadEnquiries()">Refresh</button>
-          <button class="btn btn-primary btn-sm" id="submit-all-btn" onclick="submitAllEnquiries()">Submit All Pending</button>
+    <!-- SMS Messages sub-panel -->
+    <div id="sub-panel-sms-inbox">
+      <div class="card" style="padding-bottom:8px;">
+        <div class="filter-row">
+          <input type="text" id="sms-search" placeholder="Search messages..." oninput="filterSMS()" style="max-width:220px">
+          <select id="sms-filter" onchange="filterSMS()" style="max-width:160px">
+            <option value="all">All messages</option>
+            <option value="addinfo">Has enquiry URL</option>
+            <option value="pending">Pending submission</option>
+            <option value="submitted">Submitted</option>
+            <option value="expired">Expired</option>
+          </select>
+          <span class="muted small" id="sms-count"></span>
+        </div>
+        <div id="sms-content">
+          <div class="empty"><div class="empty-icon">📨</div><p>Click Refresh to load SMS messages</p></div>
         </div>
       </div>
-      <div id="enq-stats" class="flex gap-12 mt-8 mb-12" style="margin-bottom:14px;">
-        <div class="stat-badge"><strong id="enq-pending">—</strong> pending</div>
-        <div class="stat-badge"><strong id="enq-submitted">—</strong> submitted</div>
-      </div>
-      <div id="enq-content">
-        <div class="empty"><div class="empty-icon">📋</div><p>Click Refresh to load enquiry URLs from SMS</p></div>
+    </div>
+
+    <!-- Enquiry URLs sub-panel -->
+    <div id="sub-panel-enquiry-urls" style="display:none;">
+      <div class="card">
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;">
+          <div class="stat-badge"><strong id="enq-pending">—</strong> pending</div>
+          <div class="stat-badge"><strong id="enq-submitted">—</strong> submitted</div>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="loadEnquiries()">Refresh</button>
+          <button class="btn btn-primary btn-sm" id="submit-all-btn" onclick="submitAllEnquiries()">Submit All Pending</button>
+        </div>
+        <div id="enq-content">
+          <div class="empty"><div class="empty-icon">📋</div><p>Click Refresh to load enquiry URLs</p></div>
+        </div>
       </div>
     </div>
   </div>
@@ -302,16 +400,6 @@
   <div class="tab-panel" id="panel-replies">
     <div class="grid-2">
       <div>
-        <div class="card">
-          <div class="card-title">OpenRent Session Cookies</div>
-          <p class="muted small" style="margin-bottom:10px">Export your openrent.co.uk cookies using the <strong>Cookie-Editor</strong> browser extension (Export → JSON), then paste here.</p>
-          <textarea id="cookies-input" placeholder='[{"name":"session","value":"..."}]' style="min-height:80px; font-family:monospace; font-size:11px;"></textarea>
-          <div class="mt-8">
-            <button class="btn btn-primary btn-sm" onclick="saveCookies()">Save Cookies</button>
-            <span class="muted small" id="cookies-save-status" style="margin-left:10px"></span>
-          </div>
-        </div>
-
         <div class="card">
           <div class="card-title">Find Enquiry by Landlord Name</div>
           <p class="muted small" style="margin-bottom:10px">Paste your OpenRent enquiries page URL, then type the landlord name to find.</p>
@@ -361,6 +449,7 @@ let selectedNumber = null;
 let smsData = [];
 let enquiryData = [];
 let replyQueue = [];
+let currentSubTab = 'sms-inbox';
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -374,10 +463,20 @@ document.addEventListener('DOMContentLoaded', () => {
       t.classList.add('active');
       document.getElementById('panel-' + t.dataset.tab).classList.add('active');
       if (t.dataset.tab === 'sms') loadSMS();
-      if (t.dataset.tab === 'enquiries') loadEnquiries();
     });
   });
 });
+
+// ── Sub-tabs (SMS & Enquiries) ────────────────────────────────────────────────
+function switchSubTab(tab) {
+  currentSubTab = tab;
+  document.getElementById('sub-sms-btn').classList.toggle('active', tab === 'sms-inbox');
+  document.getElementById('sub-enq-btn').classList.toggle('active', tab === 'enquiry-urls');
+  document.getElementById('sub-panel-sms-inbox').style.display = tab === 'sms-inbox' ? '' : 'none';
+  document.getElementById('sub-panel-enquiry-urls').style.display = tab === 'enquiry-urls' ? '' : 'none';
+  document.getElementById('sms-actions').style.display = tab === 'sms-inbox' ? '' : 'none';
+  if (tab === 'enquiry-urls') loadEnquiries();
+}
 
 // ── Config ────────────────────────────────────────────────────────────────────
 async function loadConfig() {
@@ -391,11 +490,19 @@ async function loadConfig() {
     ? `<span class="mono" style="font-size:12px">${d.from_number}</span>`
     : '<span class="muted">no number set</span>';
 
-  // Cookies
+  // Cookies status
   const cookiesDot = document.getElementById('cookies-dot');
   const cookiesStatus = document.getElementById('cookies-status');
   cookiesDot.className = 'dot ' + (d.has_cookies ? '' : 'off');
   cookiesStatus.textContent = d.has_cookies ? 'cookies set' : 'no cookies';
+
+  // Cookies current status on home tab
+  const cookiesCurrent = document.getElementById('cookies-current');
+  if (d.has_cookies) {
+    cookiesCurrent.innerHTML = '<span class="badge badge-green">Cookies saved</span>';
+  } else {
+    cookiesCurrent.innerHTML = '<span class="badge badge-yellow">No cookies saved yet</span>';
+  }
 
   // Progress bar
   const pct = d.progress.total ? Math.round(d.progress.called / d.progress.total * 100) : 0;
@@ -465,7 +572,6 @@ function runBatch() {
   addLine('Starting batch of ' + batchSize + '...');
 
   const es = new EventSource('/api/calls/run?' + new URLSearchParams({ batch_size: batchSize }));
-  // SSE for POST won't work — use fetch with ReadableStream instead
   es.close();
 
   fetch('/api/calls/run', {
@@ -624,11 +730,21 @@ function dismissSMS(sid) {
   // update row count
   const visible = document.querySelectorAll('#sms-content tbody tr').length;
   document.getElementById('sms-count').textContent = visible + ' messages';
-  // update badge
+  // update badges
   const pending = smsData.filter(m => !getDismissed().has(m.sid) && m.has_addinfo && !m.enquiry_submitted && !m.skip && !m.expired).length;
+  updateSMSBadge(pending);
+}
+
+function updateSMSBadge(count) {
   const badge = document.getElementById('badge-sms');
-  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline'; }
-  else badge.style.display = 'none';
+  const badgeInner = document.getElementById('badge-sms-inner');
+  if (count > 0) {
+    badge.textContent = count; badge.style.display = 'inline';
+    badgeInner.textContent = count; badgeInner.style.display = 'inline';
+  } else {
+    badge.style.display = 'none';
+    badgeInner.style.display = 'none';
+  }
 }
 
 // ── SMS ───────────────────────────────────────────────────────────────────────
@@ -655,9 +771,7 @@ async function loadSMS() {
   // Update badge
   const _dismissed = getDismissed();
   const pending = data.filter(m => !_dismissed.has(m.sid) && m.has_addinfo && !m.enquiry_submitted && !m.skip && !m.expired).length;
-  const badge = document.getElementById('badge-sms');
-  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline'; }
-  else badge.style.display = 'none';
+  updateSMSBadge(pending);
 
   renderSMS();
 }
@@ -725,7 +839,6 @@ async function submitSingleEnquiry(url, btn) {
     btn.closest('tr').querySelector('td:nth-child(5)').innerHTML = '<span class="badge badge-green">submitted</span>';
     btn.closest('td').innerHTML = '<span class="badge badge-muted">done</span>';
     toast('Enquiry submitted', 'success');
-    // Update data
     const msg = smsData.find(m => (m.enquiry_urls||[]).includes(url));
     if (msg) msg.enquiry_submitted = true;
   } else {
@@ -736,7 +849,6 @@ async function submitSingleEnquiry(url, btn) {
 }
 
 async function submitAllVisible() {
-  const filter = document.getElementById('sms-filter').value;
   const pending = smsData.filter(m => m.has_addinfo && !m.enquiry_submitted && !m.skip && !m.expired);
   const urls = [...new Set(pending.flatMap(m => m.enquiry_urls || []))];
   if (!urls.length) { toast('No pending enquiries to submit', 'error'); return; }
